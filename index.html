@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lapak UMKM - Belanja Produk Lokal</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="navbar">
+    <a class="brand" href="#"><span>Lapak</span>UMKM</a>
+    <nav>
+      <a href="#produk">Produk</a>
+      <a href="#tentang">Tentang</a>
+    </nav>
+    <button class="cart-button" id="cartButton" type="button">Keranjang <span id="cartCount">0</span></button>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div>
+        <p class="eyebrow">Dukung produk lokal</p>
+        <h1>Temukan produk UMKM pilihan Indonesia</h1>
+        <p>Belanja mudah, hasil karya terbaik, dan langsung mendukung pelaku usaha lokal.</p>
+        <a class="primary-button" href="#produk">Jelajahi Produk</a>
+      </div>
+      <div class="hero-card" aria-hidden="true">🛍️</div>
+    </section>
+
+    <section class="catalog" id="produk">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Katalog</p>
+          <h2>Produk Pilihan</h2>
+        </div>
+        <input id="searchInput" type="search" placeholder="Cari produk..." aria-label="Cari produk" />
+      </div>
+
+      <div class="filters" id="filters">
+        <button class="filter active" type="button" data-category="Semua">Semua</button>
+        <button class="filter" type="button" data-category="Makanan">Makanan</button>
+        <button class="filter" type="button" data-category="Minuman">Minuman</button>
+        <button class="filter" type="button" data-category="Kerajinan">Kerajinan</button>
+      </div>
+
+      <div class="product-grid" id="productGrid"></div>
+    </section>
+
+    <section class="about" id="tentang">
+      <h2>Tumbuh Bersama UMKM</h2>
+      <p>Lapak UMKM menghubungkan pelanggan dengan usaha kecil dan menengah dari berbagai daerah di Indonesia.</p>
+    </section>
+  </main>
+
+  <aside class="cart-panel" id="cartPanel" aria-hidden="true">
+    <div class="cart-header">
+      <h2>Keranjang</h2>
+      <button id="closeCart" type="button" aria-label="Tutup keranjang">×</button>
+    </div>
+    <div id="cartItems" class="cart-items"></div>
+    <div class="cart-footer">
+      <strong>Total: <span id="cartTotal">Rp0</span></strong>
+      <button id="checkoutButton" class="primary-button" type="button">Checkout</button>
+    </div>
+  </aside>
+
+  <div class="overlay" id="overlay"></div>
+  <script src="script.js"></script>
+</body>
+</html>
