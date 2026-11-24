@@ -1,79 +1,39 @@
 'use client'
-import { useState } from 'react'
 
-export default function Upgrade() {
-  const [plan, setPlan] = useState(1)
-  const [nama, setNama] = useState('')
-  const [wa, setWa] = useState('')
+import Link from 'next/link'
+import { useEffect, useState } from 'react'
+import { createSupabaseBrowser } from '@/lib/supabase-browser'
+
+type Business = { id: string; name: string; is_pro: boolean; pro_until: string | null }
+export default function UpgradeProPage() {
+  const [businesses, setBusinesses] = useState<Business[]>([])
+  const [businessId, setBusinessId] = useState('')
+  const [months, setMonths] = useState(1)
+  const [message, setMessage] = useState('')
   const [loading, setLoading] = useState(false)
-  const [msg, setMsg] = useState('')
-
-  const harga = 50000 * plan
-
-  const bayar = async () => {
-    if (!nama || !wa) {
-      setMsg('Isi Nama Usaha & No WA dulu!')
-      return
-    }
+  useEffect(() => {
+    try { const id = localStorage.getItem('lapakumkm-business-id'); if (id) setBusinessId(id) } catch {}
+    const supabase = createSupabaseBrowser()
+    supabase.auth.getSession().then(async ({ data }) => {
+      if (!data.session) return
+      const response = await fetch('/api/businesses/mine', { headers: { Authorization: `Bearer ${data.session.access_token}` } })
+      if (response.ok) { const result = await response.json(); setBusinesses(result.businesses ?? []) }
+    }).catch(() => undefined)
+  }, [])
+  async function pay() {
+    setMessage('')
+    if (!businessId) { setMessage('Masuk dan daftarkan lapak terlebih dahulu.'); return }
     setLoading(true)
-    setMsg('')
     try {
-      const res = await fetch('/api/payment/create-pro-transaction', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          business_id: 'BUS-' + Date.now(),
-          business_name: nama,
-          owner_email: 'owner@email.com',
-          owner_phone: wa,
-          plan_months: plan
-        })
-      })
-      const data = await res.json()
-      setLoading(false)
-      if (data.redirect_url) {
-        window.open(data.redirect_url, '_blank')
-      } else {
-        setMsg('Gagal: ' + (data.error || 'Cek MIDTRANS_SERVER_KEY di Vercel'))
-      }
-    } catch (e) {
-      setLoading(false)
-      setMsg('Gagal konek ke server. Coba lagi.')
-    }
+      const supabase = createSupabaseBrowser()
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) throw new Error('Sesi login tidak ditemukan. Daftar lapak atau masuk kembali.')
+      const response = await fetch('/api/payment/create-pro-transaction', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` }, body: JSON.stringify({ business_id: businessId, plan_months: months }) })
+      const result = await response.json()
+      if (!response.ok) throw new Error(result.error || 'Tidak dapat membuat pembayaran.')
+      window.location.assign(result.redirect_url)
+    } catch (error) { setMessage(error instanceof Error ? error.message : 'Gagal membuat pembayaran.') }
+    finally { setLoading(false) }
   }
-
-  return (
-    <div style={{ maxWidth: 520, margin: '0 auto', padding: 16, paddingBottom: 40 }}>
-      <a href="/" style={{ color: '#16A34A', fontWeight: 700, fontSize: 13 }}>← Kembali</a>
-      <h1 style={{ fontSize: 24, marginTop: 10 }}>⭐ Upgrade ke Paket Pro</h1>
-      <p style={{ fontSize: 13, color: '#666' }}>Biar lapakmu selalu paling atas & bisa upload video.</p>
-
-      <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
-        <button onClick={() => setPlan(1)} style={{ flex: 1, padding: 14, borderRadius: 14, background: plan === 1 ? '#F97316' : '#fff', color: plan === 1 ? '#fff' : '#333', border: '1px solid #E5E7EB', fontWeight: 800 }}>
-          1 Bulan<br /><span style={{ fontWeight: 400, fontSize: 12 }}>Rp 50.000</span>
-        </button>
-        <button onClick={() => setPlan(12)} style={{ flex: 1, padding: 14, borderRadius: 14, background: plan === 12 ? '#F97316' : '#fff', color: plan === 12 ? '#fff' : '#333', border: '1px solid #E5E7EB', fontWeight: 800 }}>
-          12 Bulan<br /><span style={{ fontWeight: 400, fontSize: 12 }}>Rp 600.000</span>
-        </button>
-      </div>
-
-      <div style={{ background: '#fff', borderRadius: 14, padding: 14, marginTop: 12, fontSize: 13, lineHeight: 1.8 }}>
-        ✅ 30 produk (Gratis cuma 5)<br />
-        ✅ 30 foto (Gratis cuma 3)<br />
-        ✅ 5 video (Gratis 0)<br />
-        ✅ Badge ⭐ PRO + Selalu Paling Atas<br />
-        ✅ Pantau hasil promosi
-      </div>
-
-      <input placeholder="Nama Usaha" value={nama} onChange={(e) => setNama(e.target.value)} style={{ width: '100%', padding: 12, borderRadius: 12, border: '1px solid #E5E7EB', background: '#fff', marginTop: 12 }} />
-      <input placeholder="No WA - contoh 081234567890" value={wa} onChange={(e) => setWa(e.target.value)} style={{ width: '100%', padding: 12, borderRadius: 12, border: '1px solid #E5E7EB', background: '#fff', marginTop: 10 }} />
-
-      {msg && <div style={{ background: '#FEF2F2', color: '#DC2626', padding: 10, borderRadius: 10, fontSize: 13, fontWeight: 700, marginTop: 12 }}>{msg}</div>}
-
-      <button onClick={bayar} disabled={loading} style={{ width: '100%', background: '#F97316', color: '#fff', padding: 14, borderRadius: 24, fontWeight: 800, marginTop: 14 }}>
-        {loading ? 'MEMBUAT TRANSAKSI...' : `💳 BAYAR PRO Rp ${harga.toLocaleString('id-ID')} - QRIS / VA / E-WALLET`}
-      </button>
-      <p style={{ fontSize: 11, color: '#888', textAlign: 'center', marginTop: 8 }}>Pembayaran aman via Midtrans. Pro aktif otomatis setelah bayar.</p>
-    </div>
-  )
+  return <main className="form-page"><Link className="back-link" href="/">← Kembali ke beranda</Link><section className="form-card pro-page-card"><span className="eyebrow">✦ Lebih menonjol di direktori</span><h1>Lapak Pro</h1><p className="form-intro">Bantu usaha Anda tampil lebih menonjol dengan masa aktif Pro yang tercatat setelah pembayaran terkonfirmasi.</p><div className="plan-grid">{[{ value: 1, title: '1 bulan', price: 'Rp 50.000' }, { value: 12, title: '12 bulan', price: 'Rp 600.000', tag: 'Praktis' }].map((plan) => <button type="button" className={`plan-option ${months === plan.value ? 'plan-selected' : ''}`} onClick={() => setMonths(plan.value)} key={plan.value}>{plan.tag && <span className="plan-tag">{plan.tag}</span>}<strong>{plan.title}</strong><span>{plan.price}</span></button>)}</div><ul className="feature-list"><li>Badge Pro pada profil usaha</li><li>Prioritas tampil di direktori</li><li>Hingga 30 produk dan 30 foto</li><li>Hingga 5 video promosi</li></ul>{businesses.length > 0 && <label>Pilih lapak<select value={businessId} onChange={(e) => setBusinessId(e.target.value)}>{businesses.map((b) => <option value={b.id} key={b.id}>{b.name}{b.is_pro ? ' · Pro aktif' : ''}</option>)}</select></label>}{businesses.length === 0 && <label>ID lapak<input value={businessId} onChange={(e) => setBusinessId(e.target.value)} placeholder="Otomatis terisi setelah mendaftar di perangkat ini"/></label>}{message && <p className="form-message" role="status">{message}</p>}<button className="button button-orange submit-button" onClick={pay} disabled={loading}>{loading ? 'Membuat transaksi...' : `Lanjut bayar ${months === 1 ? 'Rp 50.000' : 'Rp 600.000'} →`}</button><p className="fine-print">Pembayaran diproses oleh Midtrans. Status Pro diaktifkan otomatis oleh notifikasi pembayaran server.</p></section></main>
 }

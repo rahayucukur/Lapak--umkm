@@ -3,27 +3,20 @@ export type Business = {
   pro_until: string | null
 }
 
-export function isActivePro(b: Business): boolean {
-  if (!b.is_pro) return false
-  if (!b.pro_until) return false
-  return new Date(b.pro_until) > new Date()
+export function isActivePro(business: Business, now = new Date()): boolean {
+  if (!business.is_pro || !business.pro_until) return false
+  const expiry = new Date(business.pro_until)
+  return Number.isFinite(expiry.getTime()) && expiry > now
 }
 
-export function getMediaLimits(b: Business) {
-  const pro = isActivePro(b)
-  return {
-    isPro: pro,
-    maxPhotos: pro ? 30 : 3,
-    maxVideos: pro ? 5 : 0,
-    maxProduk: pro ? 30 : 5
-  }
+export function getMediaLimits(business: Business) {
+  const pro = isActivePro(business)
+  return { isPro: pro, maxPhotos: pro ? 30 : 3, maxVideos: pro ? 5 : 0, maxProduk: pro ? 30 : 5 }
 }
 
-export function sortLapak<T extends { is_pro: boolean; pro_until: string | null; created_at: string }>(list: T[]): T[] {
+export function sortLapak<T extends Business & { created_at: string }>(list: T[]): T[] {
   return [...list].sort((a, b) => {
-    const aPro = a.is_pro && a.pro_until && new Date(a.pro_until) > new Date() ? 1 : 0
-    const bPro = b.is_pro && b.pro_until && new Date(b.pro_until) > new Date() ? 1 : 0
-    if (bPro !== aPro) return bPro - aPro
-    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    const byPro = Number(isActivePro(b)) - Number(isActivePro(a))
+    return byPro || new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
   })
 }
