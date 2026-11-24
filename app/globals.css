@@ -1,0 +1,6 @@
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: system-ui, -apple-system, sans-serif; background: #FFF7ED; color: #1A1A1A; }
+a { text-decoration: none; color: inherit; }
+button { cursor: pointer; border: none; font-family: inherit; }
+input { font-family: inherit; outline: none; }
+input:focus { border-color: #16A34A !important; }
